@@ -86,6 +86,13 @@ class SenderShell extends Shell
                 if (!empty($e->attachments)) {
                     $email->attachments($e->attachments);
                 }
+
+                // Set fullBaseUrl to the one provided in params.
+                // We do this before generating the output, so it will be taken into account.
+                $fullBaseUrl = Configure::read('App.fullBaseUrl');
+                if (isset($e->template_vars['fullBaseUrl'])) {
+                    Configure::write('App.fullBaseUrl', $e->template_vars['fullBaseUrl']);
+                }
 		
                 $sent = $email
                     ->to($e->email)
@@ -98,6 +105,11 @@ class SenderShell extends Shell
                     ->messageId(false)
                     ->returnPath($email->from())
                     ->send();
+
+                // Set fullBaseUrl to initial one.
+                if (isset($e->template_vars['fullBaseUrl'])) {
+                    Configure::write('App.fullBaseUrl', $fullBaseUrl);
+                }
             } catch (SocketException $exception) {
                 $this->err($exception->getMessage());
                 $sent = false;
