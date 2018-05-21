@@ -5,6 +5,7 @@ namespace EmailQueue\Model\Table;
 use Cake\Core\Configure;
 use Cake\Database\Expression\QueryExpression;
 use Cake\Database\Schema\Table as Schema;
+use Cake\Datasource\ConnectionManager;
 use Cake\Database\Type;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Table;
@@ -31,6 +32,7 @@ class EmailQueueTable extends Table
                 ]
             ]
         ]);
+        $this->_setConnection();
     }
 
     /**
@@ -51,6 +53,11 @@ class EmailQueueTable extends Table
      */
     public function enqueue($to, array $data, array $options = [])
     {
+        // Force fullBaseUrl as part of the parameters.
+        if(!isset($data['fullBaseUrl'])) {
+            $data = array_merge($data, ['fullBaseUrl' => Configure::read('App.fullBaseUrl')]);
+        }
+
         $defaults = [
             'subject' => '',
             'send_at' => new FrozenTime('now'),
@@ -178,5 +185,18 @@ class EmailQueueTable extends Table
         $schema->columnType('attachments', $type);
         
         return $schema;
+    }
+
+    /**
+     * Set the connection according to the configuration.
+     * @return void
+     */
+    protected function _setConnection() {
+        $emailQueueConf = Configure::read('EmailQueue');
+        if (!empty($emailQueueConf) && !empty($emailQueueConf['datasource'])) {
+            $datasourceName = $emailQueueConf['datasource'];
+            $connection = ConnectionManager::get($datasourceName);
+            $this->setConnection($connection);
+        }
     }
 }
